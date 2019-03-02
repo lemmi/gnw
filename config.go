@@ -21,6 +21,7 @@ type Config struct {
 	Distversion     string
 	Config          string
 	Dry             bool
+	Debug           bool
 }
 
 func strOr(value, def string) string {
@@ -64,6 +65,7 @@ func configFromCmd() Config {
 	flag.StringVar(&c.Distversion, "distversion", "", "Version of the distribution")
 	flag.StringVar(&c.Config, "config", "gateway.json", "Config file to load")
 	flag.BoolVar(&c.Dry, "dry", false, "Don't send the report")
+	flag.BoolVar(&c.Debug, "d", false, "Print debug information")
 
 	flag.Parse()
 

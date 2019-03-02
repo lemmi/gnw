@@ -38,10 +38,10 @@ type Data struct {
 		Chipset                      string   `xml:"chipset"`
 		Cpu                          []string `xml:"cpu"`
 		Model                        string   `xml:"model"`
-		MemoryTotal                  uint64   `xml:"memory_total"`
-		MemoryFree                   uint64   `xml:"memory_free"`
-		MemoryBuffering              uint64   `xml:"memory_buffering"`
-		MemoryCaching                uint64   `xml:"memory_caching"`
+		MemoryTotal                  int      `xml:"memory_total"`
+		MemoryFree                   int      `xml:"memory_free"`
+		MemoryBuffering              int      `xml:"memory_buffering"`
+		MemoryCaching                int      `xml:"memory_caching"`
 		Loadavg                      float64  `xml:"loadavg"`
 		Processes                    string   `xml:"processes"`
 		Uptime                       int64    `xml:"uptime"`
@@ -137,6 +137,18 @@ func crawl() (d Data, err error) {
 	}
 
 	{
+		var mem meminfo
+		mem, err = readMeminfo()
+		if err != nil {
+			return
+		}
+
+		var load loadavg
+		load, err = readLoadavg()
+		if err != nil {
+			return
+		}
+
 		var sysinfo unix.Sysinfo_t
 		if err = unix.Sysinfo(&sysinfo); err != nil {
 			return
@@ -144,13 +156,13 @@ func crawl() (d Data, err error) {
 
 		d.SystemData.Status = "online"
 		d.SystemData.Idletime = stat.CPUTotal.Idle
-		d.SystemData.Loadavg = float64(sysinfo.Loads[2]) / (1 << 16) // see <linux/sysinfo.h> SI_LOAD_SHIFT
+		d.SystemData.Loadavg = load.load15
 		d.SystemData.LocalTime = time.Now().Unix()
-		d.SystemData.MemoryBuffering = sysinfo.Bufferram * uint64(sysinfo.Unit) / 1024
-		//d.SystemData.MemoryCaching = (sysinfo.Totalram - sysinfo.Freeram - sysinfo.Bufferram - sysinfo.Sharedram) * uint64(sysinfo.Unit) / 1024
-		d.SystemData.MemoryFree = sysinfo.Freeram * uint64(sysinfo.Unit) / 1024
-		d.SystemData.MemoryTotal = sysinfo.Totalram * uint64(sysinfo.Unit) / 1024
-		d.SystemData.Processes = fmt.Sprintf("0/%d", sysinfo.Procs)
+		d.SystemData.MemoryBuffering = mem.Buffers
+		d.SystemData.MemoryCaching = mem.Cached
+		d.SystemData.MemoryFree = mem.MemFree
+		d.SystemData.MemoryTotal = mem.MemTotal
+		d.SystemData.Processes = fmt.Sprintf("%d/%d", load.runnable, load.procs)
 		d.SystemData.Uptime = sysinfo.Uptime
 	}
 
@@ -160,12 +172,6 @@ func crawl() (d Data, err error) {
 			return
 		}
 		d.SystemData.KernelVersion = string(bytes.Trim(utsname.Release[:], "\x00"))
-		fmt.Println(string(bytes.Trim(utsname.Sysname[:], "\x00")))
-		fmt.Println(string(bytes.Trim(utsname.Nodename[:], "\x00")))
-		fmt.Println(string(bytes.Trim(utsname.Release[:], "\x00")))
-		fmt.Println(string(bytes.Trim(utsname.Version[:], "\x00")))
-		fmt.Println(string(bytes.Trim(utsname.Machine[:], "\x00")))
-		fmt.Println(string(bytes.Trim(utsname.Domainname[:], "\x00")))
 	}
 
 	ifs, err := net.Interfaces()
@@ -242,6 +248,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+
 	d.SystemData.Hostname = c.Hostname
 	d.SystemData.Hood = c.Hood
 	d.SystemData.Contact = c.Contact
@@ -251,24 +258,39 @@ func main() {
 	d.SystemData.Geo.Lat = c.Lat
 	d.SystemData.Geo.Lng = c.Lng
 	d.SystemData.NodewatcherVersion = VERSION
-	e := xml.NewEncoder(os.Stdout)
-	e.Indent("", "\t")
-	if err := e.Encode(d); err != nil {
-		panic(err)
+
+	if c.Debug {
+		fmt.Println("XML Output:")
+		e := xml.NewEncoder(os.Stdout)
+		e.Indent("", "\t")
+		if err := e.Encode(d); err != nil {
+			panic(err)
+		}
+		fmt.Println()
 	}
 
 	xpayload, err := xml.Marshal(d)
 	if err != nil {
 		panic(err)
 	}
-	fmt.Println()
-	fmt.Println(string(xpayload))
+
+	if c.Debug {
+		fmt.Println()
+		fmt.Println("XML Payload:")
+		fmt.Println()
+		fmt.Println(string(xpayload))
+	}
 
 	var buf bytes.Buffer
 
 	fmt.Fprintf(&buf, `{%q: {%q: %q}}`, "64", d.InterfaceData.Interfaces[0].MacAddr, `<?xml version='1.0' standalone='yes'?>`+string(xpayload))
 
-	fmt.Println(buf.String())
+	if c.Debug {
+		fmt.Println()
+		fmt.Println("JSON Output:")
+		fmt.Println()
+		fmt.Println(buf.String())
+	}
 
 	if !c.Dry {
 		resp, err := http.Post("https://monitoring.freifunk-franken.de/api/alfred", "application/json; charset=UTF-8", &buf)
@@ -277,6 +299,11 @@ func main() {
 		}
 		defer resp.Body.Close()
 
-		io.Copy(os.Stdout, resp.Body)
+		if c.Debug {
+			fmt.Println()
+			fmt.Println("HTTP Response:")
+			fmt.Println()
+			io.Copy(os.Stdout, resp.Body)
+		}
 	}
 }
