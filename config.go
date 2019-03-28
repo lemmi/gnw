@@ -95,7 +95,7 @@ func configRequire(errors errors, option interface{}, name string) errors {
 	if option != zero.Interface() {
 		return errors
 	}
-	err := fmt.Errorf("Option %q is required", name)
+	err := fmt.Errorf("option %q is required", name)
 	return append(errors, err)
 }
 

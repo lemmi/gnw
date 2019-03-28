@@ -35,11 +35,11 @@ type meminfo struct {
 	SUnreclaim        int
 	KernelStack       int
 	PageTables        int
-	NFS_Unstable      int
+	NFSUnstable       int
 	Bounce            int
 	WritebackTmp      int
 	CommitLimit       int
-	Committed_AS      int
+	CommittedAS       int
 	VmallocTotal      int
 	VmallocUsed       int
 	VmallocChunk      int
@@ -48,10 +48,10 @@ type meminfo struct {
 	AnonHugePages     int
 	ShmemHugePages    int
 	ShmemPmdMapped    int
-	HugePages_Total   int
-	HugePages_Free    int
-	HugePages_Rsvd    int
-	HugePages_Surp    int
+	HugePagesTotal    int
+	HugePagesFree     int
+	HugePagesRsvd     int
+	HugePagesSurp     int
 	Hugepagesize      int
 	Hugetlb           int
 	DirectMap4k       int
@@ -62,13 +62,13 @@ type meminfo struct {
 func readMeminfo() (meminfo, error) {
 	var m meminfo
 
-	f_meminfo, err := os.Open("/proc/meminfo")
+	fMeminfo, err := os.Open("/proc/meminfo")
 	if err != nil {
 		return m, err
 	}
-	defer f_meminfo.Close()
+	defer fMeminfo.Close()
 
-	scan := bufio.NewScanner(f_meminfo)
+	scan := bufio.NewScanner(fMeminfo)
 	for scan.Scan() {
 		if _, err := m.setLine(scan.Text()); err != nil {
 			return m, err
@@ -150,7 +150,7 @@ func (m *meminfo) set(field string, value int) (*meminfo, error) {
 	case "PageTables":
 		m.PageTables = value
 	case "NFS_Unstable":
-		m.NFS_Unstable = value
+		m.NFSUnstable = value
 	case "Bounce":
 		m.Bounce = value
 	case "WritebackTmp":
@@ -158,7 +158,7 @@ func (m *meminfo) set(field string, value int) (*meminfo, error) {
 	case "CommitLimit":
 		m.CommitLimit = value
 	case "Committed_AS":
-		m.Committed_AS = value
+		m.CommittedAS = value
 	case "VmallocTotal":
 		m.VmallocTotal = value
 	case "VmallocUsed":
@@ -176,13 +176,13 @@ func (m *meminfo) set(field string, value int) (*meminfo, error) {
 	case "ShmemPmdMapped":
 		m.ShmemPmdMapped = value
 	case "HugePages_Total":
-		m.HugePages_Total = value
+		m.HugePagesTotal = value
 	case "HugePages_Free":
-		m.HugePages_Free = value
+		m.HugePagesFree = value
 	case "HugePages_Rsvd":
-		m.HugePages_Rsvd = value
+		m.HugePagesRsvd = value
 	case "HugePages_Surp":
-		m.HugePages_Surp = value
+		m.HugePagesSurp = value
 	case "Hugepagesize":
 		m.Hugepagesize = value
 	case "Hugetlb":

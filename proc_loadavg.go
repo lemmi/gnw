@@ -16,13 +16,13 @@ type loadavg struct {
 
 func readLoadavg() (loadavg, error) {
 	var load loadavg
-	f_load, err := os.Open("/proc/loadavg")
+	fLoad, err := os.Open("/proc/loadavg")
 	if err != nil {
 		return load, err
 	}
-	defer f_load.Close()
+	defer fLoad.Close()
 
-	_, err = fmt.Fscanf(f_load, "%f %f %f %d/%d %d",
+	_, err = fmt.Fscanf(fLoad, "%f %f %f %d/%d %d",
 		&load.load1,
 		&load.load5,
 		&load.load15,

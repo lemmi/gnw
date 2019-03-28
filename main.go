@@ -36,7 +36,7 @@ type Data struct {
 		Distname                     string   `xml:"distname"`
 		Distversion                  string   `xml:"distversion"`
 		Chipset                      string   `xml:"chipset"`
-		Cpu                          []string `xml:"cpu"`
+		CPU                          []string `xml:"cpu"`
 		Model                        string   `xml:"model"`
 		MemoryTotal                  int      `xml:"memory_total"`
 		MemoryFree                   int      `xml:"memory_free"`
@@ -130,7 +130,7 @@ func getBabelNeighbours() []BabelNeighbour {
 	return neighs
 }
 
-func crawl() (d Data, err error) {
+func crawl(c Config) (d Data, err error) {
 	stat, err := procfs.NewStat()
 	if err != nil {
 		return
@@ -223,18 +223,31 @@ func crawl() (d Data, err error) {
 	}
 
 	d.BabelNeighbours.Neighbours = getBabelNeighbours()
-	return d, err
-}
 
-func parseUtsString(s [65]int8) string {
-	var buf strings.Builder
-	for _, c := range s {
-		if c == 0 {
-			break
-		}
-		buf.WriteByte(byte(c))
-	}
-	return buf.String()
+	d.SystemData.Hostname = c.Hostname
+	d.SystemData.Description = c.Description
+	d.SystemData.Geo.Lat = c.Lat
+	d.SystemData.Geo.Lng = c.Lng
+	d.SystemData.PositionComment = c.PositionComment
+	d.SystemData.Hood = c.Hood
+	d.SystemData.Contact = c.Contact
+	d.SystemData.Distname = c.Distname
+	d.SystemData.Distversion = c.Distversion
+	d.SystemData.FirmwareVersion = "Generic"
+	d.SystemData.NodewatcherVersion = VERSION
+
+	//unused
+	d.SystemData.Chipset = ""
+	d.SystemData.CPU = []string(nil)
+	d.SystemData.Model = ""
+	d.SystemData.Hoodid = ""
+	d.SystemData.BatmanAdvancedVersion = ""
+	d.SystemData.FirmwareRevision = ""
+	d.SystemData.OpenwrtCoreRevision = ""
+	d.SystemData.OpenwrtFeedsPackagesRevision = ""
+	d.SystemData.VpnActive = 0
+
+	return d, err
 }
 
 func main() {
@@ -244,20 +257,10 @@ func main() {
 		os.Exit(1)
 	}
 
-	d, err := crawl()
+	d, err := crawl(c)
 	if err != nil {
 		panic(err)
 	}
-
-	d.SystemData.Hostname = c.Hostname
-	d.SystemData.Hood = c.Hood
-	d.SystemData.Contact = c.Contact
-	d.SystemData.Distname = c.Distname
-	d.SystemData.Distversion = c.Distversion
-	d.SystemData.FirmwareVersion = "Generic"
-	d.SystemData.Geo.Lat = c.Lat
-	d.SystemData.Geo.Lng = c.Lng
-	d.SystemData.NodewatcherVersion = VERSION
 
 	if c.Debug {
 		fmt.Println("XML Output:")
@@ -283,7 +286,11 @@ func main() {
 
 	var buf bytes.Buffer
 
-	fmt.Fprintf(&buf, `{%q: {%q: %q}}`, "64", d.InterfaceData.Interfaces[0].MacAddr, `<?xml version='1.0' standalone='yes'?>`+string(xpayload))
+	fmt.Fprintf(&buf, `{%q: {%q: %q}}`,
+		"64",
+		d.InterfaceData.Interfaces[0].MacAddr,
+		`<?xml version='1.0' standalone='yes'?>`+string(xpayload),
+	)
 
 	if c.Debug {
 		fmt.Println()
@@ -303,7 +310,9 @@ func main() {
 			fmt.Println()
 			fmt.Println("HTTP Response:")
 			fmt.Println()
-			io.Copy(os.Stdout, resp.Body)
+			if _, err := io.Copy(os.Stdout, resp.Body); err != nil {
+				fmt.Println(err)
+			}
 		}
 	}
 }
