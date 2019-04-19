@@ -4,11 +4,14 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"log"
+	"log/syslog"
 	"os"
 	"reflect"
 	"strings"
 )
 
+// Config holds user values and overrides
 type Config struct {
 	Hostname        string
 	Description     string
@@ -22,6 +25,9 @@ type Config struct {
 	Config          string
 	Dry             bool
 	Debug           bool
+	Syslog          bool
+
+	Log *log.Logger
 }
 
 func strOr(value, def string) string {
@@ -47,6 +53,7 @@ func configOr(conf, def Config) Config {
 	conf.Distname = strOr(conf.Distname, def.Distname)
 	conf.Distversion = strOr(conf.Distversion, def.Distversion)
 	conf.Config = strOr(conf.Config, def.Config)
+	conf.Syslog = conf.Syslog || def.Syslog
 
 	return conf
 }
@@ -66,6 +73,7 @@ func configFromCmd() Config {
 	flag.StringVar(&c.Config, "config", "gateway.json", "Config file to load")
 	flag.BoolVar(&c.Dry, "dry", false, "Don't send the report")
 	flag.BoolVar(&c.Debug, "d", false, "Print debug information")
+	flag.BoolVar(&c.Syslog, "syslog", false, "Use the syslog")
 
 	flag.Parse()
 
@@ -127,6 +135,17 @@ func getConfig() (Config, error) {
 	errors = configRequire(errors, c.Lng, "Lng")
 	errors = configRequire(errors, c.Contact, "Contact")
 	errors = configRequire(errors, c.Hood, "Hood")
+
+	if c.Syslog {
+		c.Log, err = syslog.NewLogger(syslog.LOG_NOTICE|syslog.LOG_DAEMON, log.LstdFlags)
+		if err != nil {
+			log.Println("Can't open syslog, falling back to normal logger")
+			log.Println(err)
+		}
+	}
+	if c.Log == nil {
+		c.Log = log.New(os.Stdout, "gnw: ", log.LstdFlags)
+	}
 
 	if len(errors) == 0 {
 		return c, nil

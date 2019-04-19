@@ -8,17 +8,21 @@ import (
 	"io"
 	"net"
 	"net/http"
+	"net/http/httputil"
 	"os"
 	"strings"
 	"time"
 
+	"github.com/lemmi/closer"
 	"github.com/prometheus/procfs"
 	"github.com/vishvananda/netlink"
 	"golang.org/x/sys/unix"
 )
 
+// VERSION gnw version string
 const VERSION = "gnw-0.0.1"
 
+// Data is used xml encoding
 type Data struct {
 	XMLName    xml.Name `xml:"data"`
 	SystemData struct {
@@ -72,11 +76,13 @@ type Data struct {
 	} `xml:"clients"`
 }
 
+// BabelNeighbour is used for xml encoding
 type BabelNeighbour struct {
 	MacAddr           string `xml:",chardata"`
 	OutgoingInterface string `xml:"outgoing_interface"`
 }
 
+// Interface is used for xml encoding
 type Interface struct {
 	XMLName   xml.Name
 	Name      string `xml:"name"`
@@ -86,6 +92,7 @@ type Interface struct {
 	TrafficTx uint64 `xml:"traffic_tx"`
 }
 
+// ClientNum is used for xml encoding
 type ClientNum struct {
 	XMLName xml.Name
 	N       int `xml:",chardata"`
@@ -96,7 +103,7 @@ func getBabelNeighbours() []BabelNeighbour {
 	if err != nil {
 		return nil
 	}
-	defer conn.Close()
+	defer closer.WithStackTrace(conn)
 
 	go fmt.Fprintln(conn, "dump")
 
@@ -236,7 +243,7 @@ func crawl(c Config) (d Data, err error) {
 	d.SystemData.FirmwareVersion = "Generic"
 	d.SystemData.NodewatcherVersion = VERSION
 
-	//unused
+	// unused
 	d.SystemData.Chipset = ""
 	d.SystemData.CPU = []string(nil)
 	d.SystemData.Model = ""
@@ -250,69 +257,122 @@ func crawl(c Config) (d Data, err error) {
 	return d, err
 }
 
-func main() {
-	c, err := getConfig()
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
-
-	d, err := crawl(c)
-	if err != nil {
-		panic(err)
-	}
-
-	if c.Debug {
-		fmt.Println("XML Output:")
-		e := xml.NewEncoder(os.Stdout)
-		e.Indent("", "\t")
-		if err := e.Encode(d); err != nil {
-			panic(err)
-		}
-		fmt.Println()
-	}
-
-	xpayload, err := xml.Marshal(d)
-	if err != nil {
-		panic(err)
-	}
-
-	if c.Debug {
-		fmt.Println()
-		fmt.Println("XML Payload:")
-		fmt.Println()
-		fmt.Println(string(xpayload))
-	}
-
+func wrapInJSON(d Data, xpayload []byte) []byte {
 	var buf bytes.Buffer
 
 	fmt.Fprintf(&buf, `{%q: {%q: %q}}`,
 		"64",
 		d.InterfaceData.Interfaces[0].MacAddr,
-		`<?xml version='1.0' standalone='yes'?>`+string(xpayload),
+		"<?xml version='1.0' standalone='yes'?>"+string(xpayload),
 	)
 
+	return buf.Bytes()
+}
+
+func sendReport(c Config, payload []byte) error {
+	req, err := http.NewRequest("POST", "https://monitoring.freifunk-franken.de/api/alfred", bytes.NewReader(payload))
+	if err != nil {
+		return err
+	}
+
+	req.Header.Set("Content-Type", "application/json; charset=UTF-8")
+
 	if c.Debug {
-		fmt.Println()
-		fmt.Println("JSON Output:")
-		fmt.Println()
-		fmt.Println(buf.String())
+		c.Log.Println()
+		c.Log.Println("POST:")
+		c.Log.Println()
+		dump, err := httputil.DumpRequestOut(req, true)
+		if err != nil {
+			return err
+		}
+		c.Log.Println(string(dump))
 	}
 
 	if !c.Dry {
-		resp, err := http.Post("https://monitoring.freifunk-franken.de/api/alfred", "application/json; charset=UTF-8", &buf)
+		resp, err := http.DefaultClient.Do(req)
 		if err != nil {
-			panic(err)
+			return err
 		}
-		defer resp.Body.Close()
+		defer closer.WithStackTrace(resp.Body)
 
 		if c.Debug {
-			fmt.Println()
-			fmt.Println("HTTP Response:")
-			fmt.Println()
+			c.Log.Println()
+			c.Log.Println("HTTP Response:")
+			c.Log.Println()
 			if _, err := io.Copy(os.Stdout, resp.Body); err != nil {
-				fmt.Println(err)
+				c.Log.Println(err)
 			}
 		}
+	}
+
+	return nil
+}
+
+func prepareReport(c Config) ([]byte, error) {
+	d, err := crawl(c)
+	if err != nil {
+		return nil, err
+	}
+
+	if c.Debug {
+		c.Log.Println("XML Output:")
+		e := xml.NewEncoder(os.Stdout)
+		e.Indent("", "\t")
+		if err := e.Encode(d); err != nil {
+			return nil, err
+		}
+		c.Log.Println()
+	}
+
+	xpayload, err := xml.Marshal(d)
+	if err != nil {
+		return nil, err
+	}
+
+	if c.Debug {
+		c.Log.Println()
+		c.Log.Println("XML Payload:")
+		c.Log.Println()
+		c.Log.Println(string(xpayload))
+	}
+
+	return wrapInJSON(d, xpayload), nil
+}
+
+func main() {
+	c, err := getConfig()
+	if err != nil {
+		c.Log.Println(err)
+		os.Exit(1)
+	}
+
+	c.Log.Println("Starting Nodewatcher")
+
+	maxRetries := uint(5)
+	for {
+		c.Log.Println("Sending Report")
+		for retries := uint(1); retries <= maxRetries; retries++ {
+			payload, err := prepareReport(c)
+			if err != nil {
+				c.Log.Println("Failed to gather node information")
+				c.Log.Println(err)
+				os.Exit(1)
+			}
+			err = sendReport(c, payload)
+			if err == nil {
+				break
+			}
+
+			if retries == maxRetries {
+				c.Log.Println("Failed to send report, giving up")
+				break
+			}
+
+			delay := time.Second << (retries - 1)
+			c.Log.Printf("Failed to send Report, retrying in %s", delay)
+			time.Sleep(delay)
+		}
+		c.Log.Println("Successfully sent report")
+		time.Sleep(5 * time.Minute)
 	}
 }
