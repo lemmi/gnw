@@ -348,7 +348,7 @@ func main() {
 
 	c.Log.Println("Starting Nodewatcher")
 
-	maxRetries := uint(5)
+	maxRetries := uint(6)
 	for {
 		c.Log.Println("Sending Report")
 		for retries := uint(1); retries <= maxRetries; retries++ {
