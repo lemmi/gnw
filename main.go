@@ -135,6 +135,8 @@ func getBabelNeighbours() []BabelNeighbour {
 		return nil
 	}
 
+	fmt.Fprintln(conn, "quit")
+
 	return neighs
 }
 
