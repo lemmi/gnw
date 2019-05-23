@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"net/http/httputil"
 	"os"
+	"runtime"
 	"strings"
 	"time"
 
@@ -373,6 +374,7 @@ func main() {
 			time.Sleep(delay)
 		}
 		c.Log.Println("Successfully sent report")
+		runtime.GC()
 		time.Sleep(5 * time.Minute)
 	}
 }
