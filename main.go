@@ -363,6 +363,7 @@ func main() {
 			}
 			err = sendReport(c, payload)
 			if err == nil {
+				c.Log.Println("Successfully sent report")
 				break
 			}
 
@@ -375,7 +376,6 @@ func main() {
 			c.Log.Printf("Failed to send Report, retrying in %s", delay)
 			time.Sleep(delay)
 		}
-		c.Log.Println("Successfully sent report")
 		runtime.GC()
 		time.Sleep(5 * time.Minute)
 	}
