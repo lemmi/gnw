@@ -304,6 +304,7 @@ func sendReport(c Config, payload []byte) error {
 			c.Log.Println()
 			if _, err := io.Copy(os.Stdout, resp.Body); err != nil {
 				c.Log.Println(err)
+				return err
 			}
 		}
 	}
