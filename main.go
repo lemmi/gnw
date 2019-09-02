@@ -81,6 +81,7 @@ type Data struct {
 type BabelNeighbour struct {
 	MacAddr           string `xml:",chardata"`
 	OutgoingInterface string `xml:"outgoing_interface"`
+	LinkCost          string `xml:"link_cost"`
 }
 
 // Interface is used for xml encoding
@@ -128,6 +129,7 @@ func getBabelNeighbours() []BabelNeighbour {
 		neighs = append(neighs, BabelNeighbour{
 			MacAddr:           fields[4],
 			OutgoingInterface: fields[6],
+			LinkCost:          fields[20],
 		})
 
 	}
