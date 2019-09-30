@@ -1,11 +1,11 @@
 {
 	"Hostname": "",
 	"Description": "",
-	"Lat": 0,
-	"Lng": 0,
+	"Lat": 1,
+	"Lng": 1,
 	"PositionComment": "",
-	"Contact": "",
-	"Hood": "",
+	"Contact": "me@example.com",
+	"Hood": "Test",
 	"Distname": "",
 	"Distversion": ""
 }
