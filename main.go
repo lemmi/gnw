@@ -52,6 +52,7 @@ type Data struct {
 		Uptime                       int64    `xml:"uptime"`
 		Idletime                     float64  `xml:"idletime"`
 		LocalTime                    int64    `xml:"local_time"`
+		BabelVersion                 string   `xml:"babel_version"`
 		BatmanAdvancedVersion        string   `xml:"batman_advanced_version"`
 		KernelVersion                string   `xml:"kernel_version"`
 		NodewatcherVersion           string   `xml:"nodewatcher_version"`
@@ -100,10 +101,10 @@ type ClientNum struct {
 	N       int `xml:",chardata"`
 }
 
-func getBabelNeighbours() []BabelNeighbour {
+func getBabelInfo() (string, []BabelNeighbour) {
 	conn, err := net.Dial("tcp6", "[::1]:33123")
 	if err != nil {
-		return nil
+		return "", nil
 	}
 	defer closer.WithStackTrace(conn)
 
@@ -111,6 +112,7 @@ func getBabelNeighbours() []BabelNeighbour {
 
 	scanner := bufio.NewScanner(conn)
 
+	var version string
 	var neighs []BabelNeighbour
 	// skip the startup "ok"
 	for scanner.Scan() {
@@ -123,6 +125,9 @@ func getBabelNeighbours() []BabelNeighbour {
 		if len(fields) == 1 && fields[0] == "ok" {
 			break
 		}
+		if len(fields) > 1 && fields[0] == "version" {
+			version = strings.Join(fields[1:], " ")
+		}
 		if len(fields) < 21 || fields[1] != "neighbour" {
 			continue
 		}
@@ -134,12 +139,12 @@ func getBabelNeighbours() []BabelNeighbour {
 
 	}
 	if scanner.Err() != nil {
-		return nil
+		return version, nil
 	}
 
 	fmt.Fprintln(conn, "quit")
 
-	return neighs
+	return version, neighs
 }
 
 func crawl(c Config) (d Data, err error) {
@@ -235,7 +240,7 @@ func crawl(c Config) (d Data, err error) {
 		})
 	}
 
-	d.BabelNeighbours.Neighbours = getBabelNeighbours()
+	d.SystemData.BabelVersion, d.BabelNeighbours.Neighbours = getBabelInfo()
 
 	d.SystemData.Hostname = c.Hostname
 	d.SystemData.Description = c.Description
