@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"os"
 	"strings"
+
+	"github.com/lemmi/closer"
 )
 
 type meminfo struct {
@@ -66,7 +68,7 @@ func readMeminfo() (meminfo, error) {
 	if err != nil {
 		return m, err
 	}
-	defer fMeminfo.Close()
+	defer closer.Do(fMeminfo)
 
 	scan := bufio.NewScanner(fMeminfo)
 	for scan.Scan() {

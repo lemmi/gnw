@@ -9,6 +9,8 @@ import (
 	"os"
 	"reflect"
 	"strings"
+
+	"github.com/lemmi/closer"
 )
 
 // Config holds user values and overrides
@@ -93,7 +95,7 @@ func configFromFile(path string) (Config, error) {
 	case err != nil:
 		return c, err
 	}
-	defer f.Close()
+	defer closer.Do(f)
 
 	return c, json.NewDecoder(f).Decode(&c)
 }

@@ -190,6 +190,7 @@ func crawl(c Config) (d Data, err error) {
 	if err != nil {
 		return
 	}
+
 	for _, i := range ifs {
 		// skip lo
 		if i.Name == "lo" {

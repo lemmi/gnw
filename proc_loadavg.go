@@ -3,6 +3,8 @@ package main
 import (
 	"fmt"
 	"os"
+
+	"github.com/lemmi/closer"
 )
 
 type loadavg struct {
@@ -20,7 +22,7 @@ func readLoadavg() (loadavg, error) {
 	if err != nil {
 		return load, err
 	}
-	defer fLoad.Close()
+	defer closer.Do(fLoad)
 
 	_, err = fmt.Fscanf(fLoad, "%f %f %f %d/%d %d",
 		&load.load1,
