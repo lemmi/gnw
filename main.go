@@ -224,6 +224,29 @@ func crawl(c Config) (d Data, err error) {
 			return d, err
 		}
 
+		var neighProbe []net.IP
+		for _, neigh := range neighs {
+			if neigh.State&netlink.NUD_REACHABLE == 0 {
+				if neigh.IP.IsLinkLocalUnicast() {
+					neighProbe = append(neighProbe, neigh.IP)
+				}
+			}
+		}
+
+		nc, err := newNDP()
+		if err != nil {
+			return d, err
+		}
+		defer nc.Close()
+		_, err = nc.solicit(500*time.Millisecond, &i, neighProbe...)
+		if err != nil {
+			return d, err
+		}
+
+		neighs, err = netlink.NeighList(i.Index, netlink.FAMILY_ALL)
+		if err != nil {
+			return d, err
+		}
 		for _, neigh := range neighs {
 			if neigh.State&netlink.NUD_REACHABLE > 0 {
 				neighAddrs[neigh.HardwareAddr.String()] = struct{}{}
