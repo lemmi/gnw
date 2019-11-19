@@ -222,6 +222,11 @@ func crawl(c Config) (d Data, err error) {
 			TrafficTx: link.Attrs().Statistics.TxBytes,
 		})
 
+		// only run neighbour discovery on layer2 devices
+		if len(bytes.Trim(i.HardwareAddr, "\x00")) == 0 {
+			continue
+		}
+
 		neighAddrs := map[string]struct{}{}
 		neighs, err := netlink.NeighList(i.Index, netlink.FAMILY_ALL)
 		if err != nil {
