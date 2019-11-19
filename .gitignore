@@ -1,5 +1,3 @@
-gnw
-
 # Created by https://www.gitignore.io/api/go
 # Edit at https://www.gitignore.io/?templates=go
 
@@ -46,3 +44,7 @@ tags
 [._]*.un~
 
 # End of https://www.gitignore.io/api/vim
+
+gnw
+alfred-json.json
+pretty.xml
