@@ -128,15 +128,13 @@ func getBabelInfo() (string, []BabelNeighbour) {
 		if len(fields) > 1 && fields[0] == "version" {
 			version = strings.Join(fields[1:], " ")
 		}
-		if len(fields) < 21 || fields[1] != "neighbour" {
-			continue
+		if fields[0] == "add" && fields[1] == "neighbour" {
+			neighs = append(neighs, BabelNeighbour{
+				MacAddr:           fields[4],
+				OutgoingInterface: fields[6],
+				LinkCost:          fields[len(fields)-1],
+			})
 		}
-		neighs = append(neighs, BabelNeighbour{
-			MacAddr:           fields[4],
-			OutgoingInterface: fields[6],
-			LinkCost:          fields[20],
-		})
-
 	}
 	if scanner.Err() != nil {
 		return version, nil
