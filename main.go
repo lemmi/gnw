@@ -247,7 +247,7 @@ func crawl(c Config) (d Data, err error) {
 			return d, err
 		}
 		defer nc.Close()
-		_, err = nc.solicit(500*time.Millisecond, &i, neighProbe...)
+		_, err = nc.solicit(2*time.Second, &i, neighProbe...)
 		if err != nil {
 			return d, err
 		}
