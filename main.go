@@ -207,6 +207,10 @@ func crawl(c Config) (d Data, err error) {
 			return d, err
 		}
 
+		if link.Attrs().Flags&net.FlagUp == 0 {
+			continue
+		}
+
 		d.InterfaceData.Interfaces = append(d.InterfaceData.Interfaces, Interface{
 			XMLName: xml.Name{
 				Local: i.Name,
