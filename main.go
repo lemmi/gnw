@@ -225,7 +225,6 @@ func crawl(c Config) (d Data, err error) {
 			continue
 		}
 
-		neighAddrs := map[string]struct{}{}
 		neighs, err := netlink.NeighList(i.Index, netlink.FAMILY_ALL)
 		if err != nil {
 			return d, err
@@ -250,6 +249,7 @@ func crawl(c Config) (d Data, err error) {
 			return d, err
 		}
 
+		neighAddrs := map[string]struct{}{}
 		neighs, err = netlink.NeighList(i.Index, netlink.FAMILY_ALL)
 		if err != nil {
 			return d, err

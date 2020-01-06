@@ -50,6 +50,8 @@ type meminfo struct {
 	AnonHugePages     int
 	ShmemHugePages    int
 	ShmemPmdMapped    int
+	FileHugePages     int
+	FilePmdMapped     int
 	HugePagesTotal    int
 	HugePagesFree     int
 	HugePagesRsvd     int
@@ -84,7 +86,7 @@ func readMeminfo() (meminfo, error) {
 type meminfoError string
 
 func (m meminfoError) Error() string {
-	return fmt.Sprintf("Unkown meminfo field %q", m)
+	return fmt.Sprintf("Unkown meminfo field %q", string(m))
 }
 func (m *meminfo) setLine(l string) (*meminfo, error) {
 	var field string
@@ -177,6 +179,10 @@ func (m *meminfo) set(field string, value int) (*meminfo, error) {
 		m.ShmemHugePages = value
 	case "ShmemPmdMapped":
 		m.ShmemPmdMapped = value
+	case "FileHugePages":
+		m.FileHugePages = value
+	case "FilePmdMapped":
+		m.FilePmdMapped = value
 	case "HugePages_Total":
 		m.HugePagesTotal = value
 	case "HugePages_Free":
