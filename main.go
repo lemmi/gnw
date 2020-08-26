@@ -406,6 +406,8 @@ func main() {
 				break
 			}
 
+			c.Log.Println(err)
+
 			if retries == maxRetries {
 				c.Log.Println("Failed to send report, giving up")
 				break
