@@ -71,6 +71,10 @@ func (n ndp) solicit(timeout time.Duration, iface *net.Interface, targets ...net
 	}
 
 	for _, target := range targets {
+		if t4 := target.To4(); t4 != nil {
+			// skip v4 addresses
+			continue
+		}
 		m, err := ndpMessage(iface, target)
 		if err != nil {
 			return nil, err
