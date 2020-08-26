@@ -102,11 +102,13 @@ type ClientNum struct {
 }
 
 func getBabelInfo() (string, []BabelNeighbour) {
-	conn, err := net.Dial("tcp6", "[::1]:33123")
+	const timeout = time.Second * 10
+	conn, err := net.DialTimeout("tcp6", "[::1]:33123", timeout)
 	if err != nil {
 		return "", nil
 	}
 	defer closer.WithStackTrace(conn)
+	conn.SetDeadline(time.Now().Add(timeout))
 
 	go fmt.Fprintln(conn, "dump")
 
