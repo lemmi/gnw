@@ -21,7 +21,7 @@ import (
 )
 
 // VERSION gnw version string
-const VERSION = "gnw-0.0.1"
+const VERSION = "gnw-0.0.3"
 
 // Data is used xml encoding
 type Data struct {
@@ -49,7 +49,7 @@ type Data struct {
 		MemoryCaching                int      `xml:"memory_caching"`
 		Loadavg                      float64  `xml:"loadavg"`
 		Processes                    string   `xml:"processes"`
-		Uptime                       int64    `xml:"uptime"`
+		Uptime                       float64  `xml:"uptime"`
 		Idletime                     float64  `xml:"idletime"`
 		LocalTime                    int64    `xml:"local_time"`
 		BabelVersion                 string   `xml:"babel_version"`
@@ -63,7 +63,7 @@ type Data struct {
 		VpnActive                    int      `xml:"vpn_active"`
 	} `xml:"system_data"`
 	InterfaceData struct {
-		Interfaces []Interface
+		Interfaces []Interface `xml:",any"`
 	} `xml:"interface_data"`
 	BatmanAdvInterfaces  string `xml:"batman_adv_interfaces"`
 	BatmanAdvOriginators string `xml:"batman_adv_originators"`
@@ -74,13 +74,13 @@ type Data struct {
 	} `xml:"babel_neighbours"`
 	ClientCount int `xml:"client_count"`
 	Clients     struct {
-		Num []ClientNum
+		Num []ClientNum `xml:",any"`
 	} `xml:"clients"`
 }
 
 // BabelNeighbour is used for xml encoding
 type BabelNeighbour struct {
-	MacAddr           string `xml:",chardata"`
+	IP                string `xml:"ip"`
 	OutgoingInterface string `xml:"outgoing_interface"`
 	LinkCost          string `xml:"link_cost"`
 }
@@ -132,7 +132,7 @@ func getBabelInfo() (string, []BabelNeighbour) {
 		}
 		if fields[0] == "add" && fields[1] == "neighbour" {
 			neighs = append(neighs, BabelNeighbour{
-				MacAddr:           fields[4],
+				IP:                fields[4],
 				OutgoingInterface: fields[6],
 				LinkCost:          fields[len(fields)-1],
 			})
@@ -180,7 +180,7 @@ func crawl(c Config) (d Data, err error) {
 		d.SystemData.MemoryFree = mem.MemFree
 		d.SystemData.MemoryTotal = mem.MemTotal
 		d.SystemData.Processes = fmt.Sprintf("%d/%d", load.runnable, load.procs)
-		d.SystemData.Uptime = sysinfo.Uptime
+		d.SystemData.Uptime = float64(sysinfo.Uptime)
 	}
 
 	{
