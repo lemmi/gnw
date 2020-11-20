@@ -87,12 +87,21 @@ type BabelNeighbour struct {
 
 // Interface is used for xml encoding
 type Interface struct {
-	XMLName   xml.Name
-	Name      string `xml:"name"`
-	Mtu       int    `xml:"mtu"`
-	MacAddr   string `xml:"mac_addr"`
-	TrafficRx uint64 `xml:"traffic_rx"`
-	TrafficTx uint64 `xml:"traffic_tx"`
+	XMLName              xml.Name
+	Name                 string   `xml:"name,omitempty"`
+	Mtu                  int      `xml:"mtu,omitempty"`
+	MacAddr              string   `xml:"mac_addr,omitempty"`
+	TrafficRx            uint64   `xml:"traffic_rx,omitempty"`
+	TrafficTx            uint64   `xml:"traffic_tx,omitempty"`
+	IPv4_addr            []string `xml:"ipv4_addr,omitempty"`
+	IPv6_addr            []string `xml:"ipv6_addr,omitempty"`
+	IPv6_link_local_addr []string `xml:"ipv6_link_local_addr,omitempty"`
+	Wlan_mode            string   `xml:"wlan_mode,omitempty"`
+	Wlan_tx_power        string   `xml:"wlan_tx_power,omitempty"`
+	Wlan_ssid            string   `xml:"wlan_ssid,omitempty"`
+	Wlan_type            string   `xml:"wlan_type,omitempty"`
+	Wlan_channel         string   `xml:"wlan_channel,omitempty"`
+	Wlan_width           string   `xml:"wlan_width,omitempty"`
 }
 
 // ClientNum is used for xml encoding
