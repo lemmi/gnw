@@ -65,11 +65,17 @@ type Data struct {
 	InterfaceData struct {
 		Interfaces []Interface `xml:",any"`
 	} `xml:"interface_data"`
-	BatmanAdvInterfaces  string `xml:"batman_adv_interfaces"`
-	BatmanAdvOriginators string `xml:"batman_adv_originators"`
+	BatmanAdvInterfaces struct {
+		Interfaces []BatmanAdvInterface `xml:",any"`
+	} `xml:"batman_adv_interfaces"`
+	BatmanAdvOriginators struct {
+		Originators []BatmanAdvOriginator `xml:",any"`
+	} `xml:"batman_adv_originators"`
 	BatmanAdvGatewayMode string `xml:"batman_adv_gateway_mode"`
-	BatmanAdvGatewayList string `xml:"batman_adv_gateway_list"`
-	BabelNeighbours      struct {
+	BatmanAdvGatewayList struct {
+		Gateways []BatmanAdvGateway `xml:",any"`
+	} `xml:"batman_adv_gateway_list"`
+	BabelNeighbours struct {
 		Neighbours []BabelNeighbour `xml:"neighbour"`
 	} `xml:"babel_neighbours"`
 	ClientCount int `xml:"client_count"`
@@ -87,21 +93,49 @@ type BabelNeighbour struct {
 
 // Interface is used for xml encoding
 type Interface struct {
-	XMLName              xml.Name
-	Name                 string   `xml:"name,omitempty"`
-	Mtu                  int      `xml:"mtu,omitempty"`
-	MacAddr              string   `xml:"mac_addr,omitempty"`
-	TrafficRx            uint64   `xml:"traffic_rx,omitempty"`
-	TrafficTx            uint64   `xml:"traffic_tx,omitempty"`
-	IPv4_addr            []string `xml:"ipv4_addr,omitempty"`
-	IPv6_addr            []string `xml:"ipv6_addr,omitempty"`
-	IPv6_link_local_addr []string `xml:"ipv6_link_local_addr,omitempty"`
-	Wlan_mode            string   `xml:"wlan_mode,omitempty"`
-	Wlan_tx_power        string   `xml:"wlan_tx_power,omitempty"`
-	Wlan_ssid            string   `xml:"wlan_ssid,omitempty"`
-	Wlan_type            string   `xml:"wlan_type,omitempty"`
-	Wlan_channel         string   `xml:"wlan_channel,omitempty"`
-	Wlan_width           string   `xml:"wlan_width,omitempty"`
+	XMLName           xml.Name
+	Name              string   `xml:"name,omitempty"`
+	Mtu               int      `xml:"mtu,omitempty"`
+	MacAddr           string   `xml:"mac_addr,omitempty"`
+	TrafficRx         uint64   `xml:"traffic_rx,omitempty"`
+	TrafficTx         uint64   `xml:"traffic_tx,omitempty"`
+	IPv4Addr          []string `xml:"ipv4_addr,omitempty"`
+	IPv6Addr          []string `xml:"ipv6_addr,omitempty"`
+	IPv6LinkLocalAddr []string `xml:"ipv6_link_local_addr,omitempty"`
+	WlanMode          string   `xml:"wlan_mode,omitempty"`
+	WlanTxPower       string   `xml:"wlan_tx_power,omitempty"`
+	WlanSsid          string   `xml:"wlan_ssid,omitempty"`
+	WlanType          string   `xml:"wlan_type,omitempty"`
+	WlanChannel       string   `xml:"wlan_channel,omitempty"`
+	WlanWidth         string   `xml:"wlan_width,omitempty"`
+}
+
+// BatmanAdvInterface is used for xml coding
+type BatmanAdvInterface struct {
+	XMLName xml.Name
+	Name    string `xml:"name,omitempty"`
+	Status  string `xml:"status,omitempty"`
+}
+
+// BatmanAdvOriginator is used for xml coding
+type BatmanAdvOriginator struct {
+	XMLName           xml.Name
+	Originator        string `xml:"originator,omitempty"`
+	LinkQuality       string `xml:"link_quality,omitempty"`
+	Nexthop           string `xml:"nexthop,omitempty"`
+	LastSeen          string `xml:"last_seen,omitempty"`
+	OutgoingInterface string `xml:"outgoing_interface,omitempty"`
+}
+
+// BatmanAdvGateway is used for xml coding
+type BatmanAdvGateway struct {
+	XMLName           xml.Name
+	Selected          string `xml:"selected,omitempty"`
+	Gateway           string `xml:"gateway,omitempty"`
+	LinkQuality       string `xml:"link_quality,omitempty"`
+	Nexthop           string `xml:"nexthop,omitempty"`
+	OutgoingInterface string `xml:"outgoing_interface,omitempty"`
+	GwClass           string `xml:"gw_class,omitempty"`
 }
 
 // ClientNum is used for xml encoding
