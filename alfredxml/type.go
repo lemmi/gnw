@@ -6,6 +6,30 @@ import (
 	"encoding/xml"
 )
 
+/*
+
+Example to decode a stream of monitoring data from an io.Reader:
+
+	...
+
+	dec := json.NewDecoder(logfile)
+    for {
+        var a alfredxml.Alfred
+
+        if err := dec.Decode(&a); err == io.EOF {
+            break
+        } else if err != nil {
+            return err
+        }
+
+		for mac, data := range a {
+			...
+		}
+	}
+
+	...
+*/
+
 // Data is used xml encoding
 type Data struct {
 	XMLName    xml.Name `xml:"data"`
