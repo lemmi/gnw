@@ -1,26 +1,19 @@
-package alfredxml
-
-import (
-	"bytes"
-	"encoding/json"
-	"encoding/xml"
-)
-
 /*
+Package alfredxml provided types to marshal and unmarshal alfred monitoring data.
 
 Example to decode a stream of monitoring data from an io.Reader:
 
 	...
 
-	dec := json.NewDecoder(logfile)
-    for {
-        var a alfredxml.Alfred
+	dec := json.NewDecoder(r)
+	for {
+		var a alfredxml.Alfred
 
-        if err := dec.Decode(&a); err == io.EOF {
-            break
-        } else if err != nil {
-            return err
-        }
+		if err := dec.Decode(&a); err == io.EOF {
+			break
+		} else if err != nil {
+			return err
+		}
 
 		for mac, data := range a {
 			...
@@ -29,6 +22,13 @@ Example to decode a stream of monitoring data from an io.Reader:
 
 	...
 */
+package alfredxml
+
+import (
+	"bytes"
+	"encoding/json"
+	"encoding/xml"
+)
 
 // Data is used xml encoding
 type Data struct {
