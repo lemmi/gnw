@@ -11,6 +11,7 @@ import (
 	"net/http/httputil"
 	"os"
 	"runtime"
+	"sort"
 	"strings"
 	"time"
 
@@ -129,6 +130,19 @@ func crawl(c Config) (d alfredxml.Data, err error) {
 	if err != nil {
 		return
 	}
+
+	// sort links by name and make sure "mesh" interface is sorted first
+	sort.Slice(links, func(i, j int) bool {
+		iname := links[i].Attrs().Name
+		jname := links[j].Attrs().Name
+		if iname == c.MeshIfName {
+			return true
+		}
+		if jname == c.MeshIfName {
+			return false
+		}
+		return iname < jname
+	})
 
 	for _, link := range links {
 		// skip lo
