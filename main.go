@@ -70,6 +70,17 @@ func getBabelInfo() (string, []alfredxml.BabelNeighbour) {
 	return version, neighs
 }
 
+func netInterfaceFromLink(link netlink.Link) net.Interface {
+	attrs := link.Attrs()
+	return net.Interface{
+		Index:        attrs.Index,
+		MTU:          attrs.MTU,
+		Name:         attrs.Name,
+		HardwareAddr: attrs.HardwareAddr,
+		Flags:        attrs.Flags,
+	}
+}
+
 func crawl(c Config) (d alfredxml.Data, err error) {
 	stat, err := procfs.NewStat()
 	if err != nil {
@@ -114,43 +125,39 @@ func crawl(c Config) (d alfredxml.Data, err error) {
 		d.SystemData.KernelVersion = string(bytes.Trim(utsname.Release[:], "\x00"))
 	}
 
-	ifs, err := net.Interfaces()
+	links, err := netlink.LinkList()
 	if err != nil {
 		return
 	}
 
-	for _, i := range ifs {
+	for _, link := range links {
 		// skip lo
-		if i.Name == "lo" {
+		attrs := link.Attrs()
+		if attrs.Name == "lo" {
 			continue
 		}
 
-		link, err := netlink.LinkByIndex(i.Index)
-		if err != nil {
-			return d, err
-		}
-
-		if link.Attrs().Flags&net.FlagUp == 0 {
+		if attrs.Flags&net.FlagUp == 0 {
 			continue
 		}
 
 		d.InterfaceData.Interfaces = append(d.InterfaceData.Interfaces, alfredxml.Interface{
 			XMLName: xml.Name{
-				Local: i.Name,
+				Local: attrs.Name,
 			},
-			Name:      i.Name,
-			Mtu:       i.MTU,
-			MacAddr:   i.HardwareAddr.String(),
-			TrafficRx: link.Attrs().Statistics.RxBytes,
-			TrafficTx: link.Attrs().Statistics.TxBytes,
+			Name:      attrs.Name,
+			Mtu:       attrs.MTU,
+			MacAddr:   attrs.HardwareAddr.String(),
+			TrafficRx: attrs.Statistics.RxBytes,
+			TrafficTx: attrs.Statistics.TxBytes,
 		})
 
 		// only run neighbour discovery on layer2 devices
-		if len(bytes.Trim(i.HardwareAddr, "\x00")) == 0 {
+		if len(bytes.Trim(attrs.HardwareAddr, "\x00")) == 0 {
 			continue
 		}
 
-		neighs, err := netlink.NeighList(i.Index, netlink.FAMILY_ALL)
+		neighs, err := netlink.NeighList(attrs.Index, netlink.FAMILY_ALL)
 		if err != nil {
 			return d, err
 		}
@@ -169,13 +176,13 @@ func crawl(c Config) (d alfredxml.Data, err error) {
 			return d, err
 		}
 		defer nc.Close()
-		_, err = nc.solicit(2*time.Second, &i, neighProbe...)
+		_, err = nc.solicit(2*time.Second, netInterfaceFromLink(link), neighProbe...)
 		if err != nil {
 			return d, err
 		}
 
 		neighAddrs := map[string]struct{}{}
-		neighs, err = netlink.NeighList(i.Index, netlink.FAMILY_ALL)
+		neighs, err = netlink.NeighList(attrs.Index, netlink.FAMILY_ALL)
 		if err != nil {
 			return d, err
 		}
@@ -189,7 +196,7 @@ func crawl(c Config) (d alfredxml.Data, err error) {
 		d.ClientCount += count
 		d.Clients.Num = append(d.Clients.Num, alfredxml.ClientNum{
 			XMLName: xml.Name{
-				Local: i.Name,
+				Local: attrs.Name,
 			},
 			N: count,
 		})

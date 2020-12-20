@@ -40,14 +40,14 @@ func ndpPayload(from net.HardwareAddr, to net.IP) ([]byte, error) {
 
 var IPv6MultiCastBase = net.IP{0xff, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0xff, 0x00, 0x00, 0x00}
 
-func ndpMultiCastAddr(from *net.Interface, to net.IP) *net.IPAddr {
+func ndpMultiCastAddr(from net.Interface, to net.IP) *net.IPAddr {
 	return &net.IPAddr{
 		IP:   append(IPv6MultiCastBase[:13:13], to[13:]...),
 		Zone: from.Name,
 	}
 }
 
-func ndpMessage(from *net.Interface, to net.IP) (ipv6.Message, error) {
+func ndpMessage(from net.Interface, to net.IP) (ipv6.Message, error) {
 	payload, err := ndpPayload(from.HardwareAddr, to)
 	if err != nil {
 		return ipv6.Message{}, err
@@ -63,7 +63,7 @@ func ndpMessage(from *net.Interface, to net.IP) (ipv6.Message, error) {
 	}, nil
 }
 
-func (n ndp) solicit(timeout time.Duration, iface *net.Interface, targets ...net.IP) ([]ipv6.Message, error) {
+func (n ndp) solicit(timeout time.Duration, iface net.Interface, targets ...net.IP) ([]ipv6.Message, error) {
 	var ms []ipv6.Message
 
 	if len(targets) == 0 {
