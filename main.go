@@ -144,6 +144,11 @@ func crawl(c Config) (d alfredxml.Data, err error) {
 		return iname < jname
 	})
 
+	// rename the mesh interface if requested
+	if len(links) > 0 && c.RenameMeshIf && links[0].Attrs().Name == c.MeshIfName {
+		links[0].Attrs().Name = "br-mesh"
+	}
+
 	for _, link := range links {
 		// skip lo
 		attrs := link.Attrs()

@@ -26,6 +26,7 @@ type Config struct {
 	Distversion     string
 	Config          string
 	MeshIfName      string
+	RenameMeshIf    bool
 	Dry             bool
 	Debug           bool
 	Syslog          bool
@@ -57,6 +58,7 @@ func configOr(conf, def Config) Config {
 	conf.Distversion = strOr(conf.Distversion, def.Distversion)
 	conf.Config = strOr(conf.Config, def.Config)
 	conf.MeshIfName = strOr(conf.MeshIfName, def.MeshIfName)
+	conf.RenameMeshIf = conf.RenameMeshIf || def.RenameMeshIf
 	conf.Syslog = conf.Syslog || def.Syslog
 
 	return conf
@@ -75,7 +77,8 @@ func configFromCmd() Config {
 	flag.StringVar(&c.Distname, "distname", "", "Name of the distribution")
 	flag.StringVar(&c.Distversion, "distversion", "", "Version of the distribution")
 	flag.StringVar(&c.Config, "config", "gateway.json", "Config file to load")
-	flag.StringVar(&c.MeshIfName, "meshifname", "br-mesh", "Name of the main client interface")
+	flag.StringVar(&c.MeshIfName, "meshifname", "", "Name of the main client interface")
+	flag.BoolVar(&c.RenameMeshIf, "renamemeshif", false, "Rename main client interface to br-mesh")
 	flag.BoolVar(&c.Dry, "dry", false, "Don't send the report")
 	flag.BoolVar(&c.Debug, "d", false, "Print debug information")
 	flag.BoolVar(&c.Syslog, "syslog", false, "Use the syslog")
