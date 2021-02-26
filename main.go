@@ -23,7 +23,7 @@ import (
 )
 
 // VERSION gnw version string
-const VERSION = "gnw-0.0.4"
+const VERSION = "gnw-0.0.5"
 
 func getBabelInfo() (string, []alfredxml.BabelNeighbour) {
 	const timeout = time.Second * 10
@@ -114,6 +114,7 @@ func crawl(c Config) (d alfredxml.Data, err error) {
 		d.SystemData.MemoryCaching = mem.Cached
 		d.SystemData.MemoryFree = mem.MemFree
 		d.SystemData.MemoryTotal = mem.MemTotal
+		d.SystemData.MemoryAvailable = mem.MemAvailable
 		d.SystemData.Processes = fmt.Sprintf("%d/%d", load.runnable, load.procs)
 		d.SystemData.Uptime = float64(sysinfo.Uptime)
 	}

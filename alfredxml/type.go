@@ -51,6 +51,7 @@ type Data struct {
 		CPU                          []string `xml:"cpu"`
 		Model                        string   `xml:"model"`
 		MemoryTotal                  int      `xml:"memory_total"`
+		MemoryAvailable              int      `xml:"memory_available"`
 		MemoryFree                   int      `xml:"memory_free"`
 		MemoryBuffering              int      `xml:"memory_buffering"`
 		MemoryCaching                int      `xml:"memory_caching"`
