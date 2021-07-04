@@ -23,7 +23,7 @@ import (
 )
 
 // VERSION gnw version string
-const VERSION = "gnw-0.0.5"
+const VERSION = "gnw-0.0.6"
 
 func getBabelInfo() (string, []alfredxml.BabelNeighbour) {
 	const timeout = time.Second * 10
@@ -132,22 +132,22 @@ func crawl(c Config) (d alfredxml.Data, err error) {
 		return
 	}
 
-	// sort links by name and make sure "mesh" interface is sorted first
+	// sort links by name and make sure "client" interface is sorted first
 	sort.Slice(links, func(i, j int) bool {
 		iname := links[i].Attrs().Name
 		jname := links[j].Attrs().Name
-		if iname == c.MeshIfName {
+		if iname == c.ClientIfName {
 			return true
 		}
-		if jname == c.MeshIfName {
+		if jname == c.ClientIfName {
 			return false
 		}
 		return iname < jname
 	})
 
-	// rename the mesh interface if requested
-	if len(links) > 0 && c.RenameMeshIf && links[0].Attrs().Name == c.MeshIfName {
-		links[0].Attrs().Name = "br-mesh"
+	// rename the client interface if requested
+	if len(links) > 0 && c.RenameClientIf && links[0].Attrs().Name == c.ClientIfName {
+		links[0].Attrs().Name = "br-client"
 	}
 
 	for _, link := range links {
