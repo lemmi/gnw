@@ -253,8 +253,7 @@ func crawl(c Config) (d alfredxml.Data, err error) {
 func wrapInJSON(d alfredxml.Data, xpayload []byte) []byte {
 	var buf bytes.Buffer
 
-	fmt.Fprintf(&buf, `{%q: {%q: %q}}`,
-		"64",
+	fmt.Fprintf(&buf, `{%q: %q}`,
 		d.InterfaceData.Interfaces[0].MacAddr,
 		"<?xml version='1.0' standalone='yes'?>"+string(xpayload),
 	)
@@ -263,7 +262,7 @@ func wrapInJSON(d alfredxml.Data, xpayload []byte) []byte {
 }
 
 func sendReport(c Config, payload []byte) error {
-	req, err := http.NewRequest("POST", "https://monitoring.freifunk-franken.de/api/alfred", bytes.NewReader(payload))
+	req, err := http.NewRequest("POST", "https://monitoring.freifunk-franken.de/api/alfred2", bytes.NewReader(payload))
 	if err != nil {
 		return err
 	}
