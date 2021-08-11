@@ -167,6 +167,22 @@ func (d *Data) UnmarshalJSON(b []byte) error {
 	return xml.Unmarshal([]byte(s), d)
 }
 
+// Type to facilitate encoding via standard lib encoders
+type alfredData Data
+
+// MarshalText encodes the data into an xml string
+func (ad alfredData) MarshalText() ([]byte, error) {
+	d := Data(ad)
+	var buf bytes.Buffer
+
+	if _, err := buf.WriteString("<?xml version='1.0' standalone='yes'?>"); err != nil {
+		return buf.Bytes(), err
+	}
+
+	err := xml.NewEncoder(&buf).Encode(d)
+	return buf.Bytes(), err
+}
+
 /*
 Alfred is used to deserialize monitoring data dumped directly from alfred-json
 
@@ -221,4 +237,17 @@ type Alfred2 map[string]Data
 func (a *Alfred2) UnmarshalJSON(b []byte) error {
 	m := map[string]Data(*a)
 	return json.Unmarshal(b, &m)
+}
+
+// Alfred2Slice collects data from multiple devices
+type Alfred2Slice []Data
+
+// MarshalJSON encodes all monitoring data for the alfred2 api endpoint
+func (a2s Alfred2Slice) MarshalJSON() ([]byte, error) {
+	a2 := make(map[string]alfredData, len(a2s))
+	for _, d := range a2s {
+		a2[d.InterfaceData.Interfaces[0].MacAddr] = alfredData(d)
+	}
+
+	return json.Marshal(a2)
 }

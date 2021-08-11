@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"bytes"
+	"encoding/json"
 	"encoding/xml"
 	"fmt"
 	"io"
@@ -250,17 +251,6 @@ func crawl(c Config) (d alfredxml.Data, err error) {
 	return d, err
 }
 
-func wrapInJSON(d alfredxml.Data, xpayload []byte) []byte {
-	var buf bytes.Buffer
-
-	fmt.Fprintf(&buf, `{%q: %q}`,
-		d.InterfaceData.Interfaces[0].MacAddr,
-		"<?xml version='1.0' standalone='yes'?>"+string(xpayload),
-	)
-
-	return buf.Bytes()
-}
-
 func sendReport(c Config, payload []byte) error {
 	req, err := http.NewRequest("POST", "https://monitoring.freifunk-franken.de/api/alfred2", bytes.NewReader(payload))
 	if err != nil {
@@ -317,19 +307,19 @@ func prepareReport(c Config) ([]byte, error) {
 		c.Log.Println()
 	}
 
-	xpayload, err := xml.Marshal(d)
+	payload, err := json.Marshal(alfredxml.Alfred2Slice{d})
 	if err != nil {
 		return nil, err
 	}
 
 	if c.Debug {
 		c.Log.Println()
-		c.Log.Println("XML Payload:")
+		c.Log.Println("Alfred2 Payload:")
 		c.Log.Println()
-		c.Log.Println(string(xpayload))
+		c.Log.Println(string(payload))
 	}
 
-	return wrapInJSON(d, xpayload), nil
+	return payload, nil
 }
 
 func main() {
