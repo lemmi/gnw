@@ -249,5 +249,10 @@ func (a2s Alfred2Slice) MarshalJSON() ([]byte, error) {
 		a2[d.InterfaceData.Interfaces[0].MacAddr] = alfredData(d)
 	}
 
-	return json.Marshal(a2)
+	var buf bytes.Buffer
+	enc := json.NewEncoder(&buf)
+	enc.SetEscapeHTML(false)
+	err := enc.Encode(a2)
+
+	return buf.Bytes(), err
 }
