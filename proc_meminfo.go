@@ -52,6 +52,8 @@ type meminfo struct {
 	ShmemPmdMapped    int
 	FileHugePages     int
 	FilePmdMapped     int
+	CmaTotal          int
+	CmaFree           int
 	HugePagesTotal    int
 	HugePagesFree     int
 	HugePagesRsvd     int
@@ -183,6 +185,10 @@ func (m *meminfo) set(field string, value int) (*meminfo, error) {
 		m.FileHugePages = value
 	case "FilePmdMapped":
 		m.FilePmdMapped = value
+	case "CmaTotal":
+		m.CmaTotal = value
+	case "CmaFree":
+		m.CmaFree = value
 	case "HugePages_Total":
 		m.HugePagesTotal = value
 	case "HugePages_Free":
