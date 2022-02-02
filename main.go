@@ -21,12 +21,13 @@ import (
 	"github.com/prometheus/procfs"
 	"github.com/vishvananda/netlink"
 	"golang.org/x/sys/unix"
+	"inet.af/netaddr"
 )
 
 // VERSION gnw version string
 const VERSION = "gnw-0.0.8"
 
-func getBabelInfo() (string, []alfredxml.BabelNeighbour) {
+func getBabeldInfo() (string, []alfredxml.BabelNeighbour) {
 	const timeout = time.Second * 10
 	conn, err := net.DialTimeout("tcp6", "[::1]:33123", timeout)
 	if err != nil {
@@ -46,14 +47,16 @@ func getBabelInfo() (string, []alfredxml.BabelNeighbour) {
 		if scanner.Text() == "ok" {
 			break
 		}
+
+		fields := strings.Fields(scanner.Text())
+		if len(fields) > 1 && fields[0] == "version" {
+			version = strings.Join(fields[1:], " ")
+		}
 	}
 	for scanner.Scan() {
 		fields := strings.Fields(scanner.Text())
 		if len(fields) == 1 && fields[0] == "ok" {
 			break
-		}
-		if len(fields) > 1 && fields[0] == "version" {
-			version = strings.Join(fields[1:], " ")
 		}
 		if fields[0] == "add" && fields[1] == "neighbour" {
 			neighs = append(neighs, alfredxml.BabelNeighbour{
@@ -68,6 +71,60 @@ func getBabelInfo() (string, []alfredxml.BabelNeighbour) {
 	}
 
 	fmt.Fprintln(conn, "quit")
+
+	return version, neighs
+}
+
+func getBirdInfo() (string, []alfredxml.BabelNeighbour) {
+	const timeout = time.Second * 10
+	conn, err := net.DialTimeout("unix", "/run/bird/bird.ctl", timeout)
+	if err != nil {
+		return "", nil
+	}
+	defer closer.WithStackTrace(conn)
+	conn.SetDeadline(time.Now().Add(timeout))
+
+	go func() {
+		fmt.Fprintln(conn, "show babel neighbors")
+		fmt.Fprintln(conn, "quit")
+	}()
+
+	scanner := bufio.NewScanner(conn)
+
+	var version string
+	var neighs []alfredxml.BabelNeighbour
+
+	for scanner.Scan() {
+		text := scanner.Text()
+		if strings.HasPrefix(text, "8") || strings.HasPrefix(text, "9") {
+			break
+		}
+
+		fields := strings.Fields(text)
+		if len(fields) == 1 && fields[0] == "0000" {
+			break
+		}
+		if len(fields) == 4 &&
+			strings.HasPrefix(fields[0], "0") &&
+			strings.Contains(fields[1], "BIRD") {
+			version = "bird-" + fields[2]
+		}
+		if len(fields) == 6 && strings.HasPrefix(text, " ") {
+			ll, err := netaddr.ParseIP(fields[0])
+			if err != nil || !ll.Is6() || !ll.IsLinkLocalUnicast() {
+				continue
+			}
+			neighs = append(neighs, alfredxml.BabelNeighbour{
+				IP:                fields[0],
+				OutgoingInterface: fields[1],
+				LinkCost:          fields[2],
+			})
+		}
+	}
+
+	if scanner.Err() != nil {
+		return version, nil
+	}
 
 	return version, neighs
 }
@@ -223,7 +280,15 @@ func crawl(c Config) (d alfredxml.Data, err error) {
 		})
 	}
 
-	d.SystemData.BabelVersion, d.BabelNeighbours.Neighbours = getBabelInfo()
+	babeldversion, babeldneighbours := getBabeldInfo()
+	birdversion, birdneighbours := getBirdInfo()
+	d.BabelNeighbours.Neighbours = append(babeldneighbours, birdneighbours...)
+
+	d.SystemData.BabelVersion = babeldversion
+	if babeldversion != "" && birdversion != "" {
+		d.SystemData.BabelVersion += ", "
+	}
+	d.SystemData.BabelVersion += birdversion
 
 	d.SystemData.Hostname = c.Hostname
 	d.SystemData.Description = c.Description
