@@ -25,7 +25,7 @@ import (
 )
 
 // VERSION gnw version string
-const VERSION = "gnw-0.0.8"
+const VERSION = "gnw-0.0.9"
 
 func getBabeldInfo() (string, []alfredxml.BabelNeighbour) {
 	const timeout = time.Second * 10
