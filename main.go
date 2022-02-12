@@ -27,14 +27,17 @@ import (
 // VERSION gnw version string
 const VERSION = "gnw-0.0.9"
 
-func getBabeldInfo() (string, []alfredxml.BabelNeighbour) {
+func getBabeldInfo(c Config) (string, []alfredxml.BabelNeighbour) {
 	const timeout = time.Second * 10
 	conn, err := net.DialTimeout("tcp6", "[::1]:33123", timeout)
 	if err != nil {
 		return "", nil
 	}
 	defer closer.WithStackTrace(conn)
-	conn.SetDeadline(time.Now().Add(timeout))
+	if err := conn.SetDeadline(time.Now().Add(timeout)); err != nil {
+		c.Log.Println(err)
+		return "", nil
+	}
 
 	go fmt.Fprintln(conn, "dump")
 
@@ -75,14 +78,17 @@ func getBabeldInfo() (string, []alfredxml.BabelNeighbour) {
 	return version, neighs
 }
 
-func getBirdInfo() (string, []alfredxml.BabelNeighbour) {
+func getBirdInfo(c Config) (string, []alfredxml.BabelNeighbour) {
 	const timeout = time.Second * 10
 	conn, err := net.DialTimeout("unix", "/run/bird/bird.ctl", timeout)
 	if err != nil {
 		return "", nil
 	}
 	defer closer.WithStackTrace(conn)
-	conn.SetDeadline(time.Now().Add(timeout))
+	if err := conn.SetDeadline(time.Now().Add(timeout)); err != nil {
+		c.Log.Println(err)
+		return "", nil
+	}
 
 	go func() {
 		fmt.Fprintln(conn, "show babel neighbors")
@@ -141,7 +147,11 @@ func netInterfaceFromLink(link netlink.Link) net.Interface {
 }
 
 func crawl(c Config) (d alfredxml.Data, err error) {
-	stat, err := procfs.NewStat()
+	fs, err := procfs.NewFS("/proc")
+	if err != nil {
+		return
+	}
+	stat, err := fs.Stat()
 	if err != nil {
 		return
 	}
@@ -280,8 +290,8 @@ func crawl(c Config) (d alfredxml.Data, err error) {
 		})
 	}
 
-	babeldversion, babeldneighbours := getBabeldInfo()
-	birdversion, birdneighbours := getBirdInfo()
+	babeldversion, babeldneighbours := getBabeldInfo(c)
+	birdversion, birdneighbours := getBirdInfo(c)
 	d.BabelNeighbours.Neighbours = append(babeldneighbours, birdneighbours...)
 
 	d.SystemData.BabelVersion = babeldversion

@@ -19,7 +19,9 @@ func newNDP() (ndp, error) {
 		return ndp{}, err
 	}
 	p := ipv6.NewPacketConn(c)
-	p.SetMulticastHopLimit(255)
+	if err := p.SetMulticastHopLimit(255); err != nil {
+		return ndp{}, err
+	}
 
 	return ndp{p}, nil
 }
@@ -32,7 +34,7 @@ func ndpPayload(from net.HardwareAddr, to net.IP) ([]byte, error) {
 
 	m := icmp.Message{
 		Type: ipv6.ICMPTypeNeighborSolicitation,
-		Body: &icmp.RawBody{payload},
+		Body: &icmp.RawBody{Data: payload},
 	}
 
 	return m.Marshal(nil)
