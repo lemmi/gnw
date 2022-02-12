@@ -359,14 +359,16 @@ func sendReport(c Config, payload []byte) error {
 		}
 		defer closer.WithStackTrace(resp.Body)
 
+		out := io.Discard
 		if c.Debug {
 			c.Log.Println()
 			c.Log.Println("HTTP Response:")
 			c.Log.Println()
-			if _, err := io.Copy(os.Stdout, resp.Body); err != nil {
-				c.Log.Println(err)
-				return err
-			}
+			out = os.Stdout
+		}
+		if _, err := io.Copy(out, resp.Body); err != nil {
+			c.Log.Println(err)
+			return err
 		}
 	}
 
