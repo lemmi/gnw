@@ -5,12 +5,14 @@ import (
 	"net"
 	"time"
 
+	"github.com/hashicorp/go-multierror"
 	"golang.org/x/net/icmp"
 	"golang.org/x/net/ipv6"
 )
 
 type ndp struct {
-	*ipv6.PacketConn
+	c net.PacketConn
+	p *ipv6.PacketConn
 }
 
 func newNDP() (ndp, error) {
@@ -23,7 +25,18 @@ func newNDP() (ndp, error) {
 		return ndp{}, err
 	}
 
-	return ndp{p}, nil
+	return ndp{c: c, p: p}, nil
+}
+
+func (n ndp) Close() error {
+	var result *multierror.Error
+	if err := n.p.Close(); err != nil {
+		result = multierror.Append(result, err)
+	}
+	if err := n.c.Close(); err != nil {
+		result = multierror.Append(result, err)
+	}
+	return result.ErrorOrNil()
 }
 
 func ndpPayload(from net.HardwareAddr, to net.IP) ([]byte, error) {
@@ -86,11 +99,11 @@ func (n ndp) solicit(timeout time.Duration, iface net.Interface, targets ...net.
 		ms = append(ms, m)
 	}
 
-	if _, err := n.WriteBatch(ms, 0); err != nil {
+	if _, err := n.p.WriteBatch(ms, 0); err != nil {
 		return nil, err
 	}
 
-	if err := n.SetReadDeadline(time.Now().Add(timeout)); err != nil {
+	if err := n.p.SetReadDeadline(time.Now().Add(timeout)); err != nil {
 		return nil, err
 	}
 
@@ -102,7 +115,7 @@ func (n ndp) solicit(timeout time.Duration, iface net.Interface, targets ...net.
 	var nr int
 loop:
 	for nr < len(rms) {
-		c, err := n.ReadBatch(rms[nr:], 0)
+		c, err := n.p.ReadBatch(rms[nr:], 0)
 		if err != nil {
 			if e, ok := err.(*net.OpError); ok && e.Timeout() {
 				break loop

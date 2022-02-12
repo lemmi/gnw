@@ -3,6 +3,7 @@ module github.com/lemmi/gnw
 go 1.15
 
 require (
+	github.com/hashicorp/go-multierror v1.1.1 // indirect
 	github.com/lemmi/closer v0.0.1
 	github.com/prometheus/procfs v0.7.3
 	github.com/vishvananda/netlink v1.1.0

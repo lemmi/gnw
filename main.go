@@ -147,6 +147,12 @@ func netInterfaceFromLink(link netlink.Link) net.Interface {
 }
 
 func crawl(c Config) (d alfredxml.Data, err error) {
+	nlhandle, err := netlink.NewHandle()
+	if err != nil {
+		return
+	}
+	defer nlhandle.Delete()
+
 	fs, err := procfs.NewFS("/proc")
 	if err != nil {
 		return
@@ -195,7 +201,7 @@ func crawl(c Config) (d alfredxml.Data, err error) {
 		d.SystemData.KernelVersion = string(bytes.Trim(utsname.Release[:], "\x00"))
 	}
 
-	links, err := netlink.LinkList()
+	links, err := nlhandle.LinkList()
 	if err != nil {
 		return
 	}
@@ -245,7 +251,7 @@ func crawl(c Config) (d alfredxml.Data, err error) {
 			continue
 		}
 
-		neighs, err := netlink.NeighList(attrs.Index, netlink.FAMILY_ALL)
+		neighs, err := nlhandle.NeighList(attrs.Index, netlink.FAMILY_ALL)
 		if err != nil {
 			return d, err
 		}
@@ -270,7 +276,7 @@ func crawl(c Config) (d alfredxml.Data, err error) {
 		}
 
 		neighAddrs := map[string]struct{}{}
-		neighs, err = netlink.NeighList(attrs.Index, netlink.FAMILY_ALL)
+		neighs, err = nlhandle.NeighList(attrs.Index, netlink.FAMILY_ALL)
 		if err != nil {
 			return d, err
 		}
@@ -408,6 +414,9 @@ func main() {
 	c.Log.Println("Starting Nodewatcher")
 
 	maxRetries := uint(6)
+	if tr, ok := http.DefaultTransport.(*http.Transport); ok {
+		tr.DisableKeepAlives = true
+	}
 	for {
 		c.Log.Println("Sending Report")
 		for retries := uint(1); retries <= maxRetries; retries++ {
