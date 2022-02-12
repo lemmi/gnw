@@ -332,6 +332,7 @@ func sendReport(c Config, payload []byte) error {
 		return err
 	}
 
+	req.Close = true
 	req.Header.Set("Content-Type", "application/json; charset=UTF-8")
 
 	if c.Debug {
