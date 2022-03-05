@@ -206,11 +206,10 @@ type Alfred map[string]Data
 
 // UnmarshalJSON for alfred data
 func (a *Alfred) UnmarshalJSON(b []byte) error {
-	*a = make(Alfred)
 	wrap := struct {
-		Wrap map[string]Data `json:"64"`
+		Wrap *map[string]Data `json:"64"`
 	}{
-		Wrap: *a,
+		Wrap: (*map[string]Data)(a),
 	}
 
 	return json.Unmarshal(b, &wrap)
@@ -235,8 +234,7 @@ type Alfred2 map[string]Data
 
 // UnmarshalJSON for alfred2 data
 func (a *Alfred2) UnmarshalJSON(b []byte) error {
-	m := map[string]Data(*a)
-	return json.Unmarshal(b, &m)
+	return json.Unmarshal(b, (*map[string]Data)(a))
 }
 
 // Alfred2Slice collects data from multiple devices
