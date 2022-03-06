@@ -158,15 +158,15 @@ type ClientNum struct {
 // S2nDevice is used for xml coding
 type S2nDevice struct {
 	XMLName    xml.Name
-	Name       string  `xml:"name"`
-	MacAddress string  `xml:"mac"`
-	Firmware   string  `xml:"fw"`
-	Hardware   string  `xml:"hw"`
-	RemoteMac  string  `xml:"removemac"`
-	Signal     int     `xml:"signal"`
-	Capacity   float32 `xml:"capacity"`
-	Latency    string  `xml:"latency"`
-	Clients    int     `xml:"clients"`
+	Name       string  `xml:"name,omitempty"`
+	MacAddress string  `xml:"mac,omitempty"`
+	Firmware   string  `xml:"fw,omitempty"`
+	Hardware   string  `xml:"hw,omitempty"`
+	RemoteMac  string  `xml:"removemac,omitempty"`
+	Signal     int     `xml:"signal,omitempty"`
+	Capacity   float32 `xml:"capacity,omitempty"`
+	Latency    string  `xml:"latency,omitempty"`
+	Clients    int     `xml:"clients,omitempty"`
 }
 
 // UnmarshalJSON decodes the xml embedded in the json string
