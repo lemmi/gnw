@@ -90,6 +90,9 @@ type Data struct {
 	Clients     struct {
 		Num []ClientNum `xml:",any"`
 	} `xml:"clients"`
+	S2nProxy struct {
+		S2nDevices []S2nDevice `xml:",any"`
+	} `xml:"s2nproxy"`
 }
 
 // BabelNeighbour is used for xml encoding
@@ -150,6 +153,20 @@ type BatmanAdvGateway struct {
 type ClientNum struct {
 	XMLName xml.Name
 	N       int `xml:",chardata"`
+}
+
+// S2nDevice is used for xml coding
+type S2nDevice struct {
+	XMLName    xml.Name
+	Name       string  `xml:"name"`
+	MacAddress string  `xml:"mac"`
+	Firmware   string  `xml:"fw"`
+	Hardware   string  `xml:"hw"`
+	RemoteMac  string  `xml:"removemac"`
+	Signal     int     `xml:"signal"`
+	Capacity   float32 `xml:"capacity"`
+	Latency    string  `xml:"latency"`
+	Clients    int     `xml:"clients"`
 }
 
 // UnmarshalJSON decodes the xml embedded in the json string
