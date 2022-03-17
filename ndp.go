@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"net"
+	"net/netip"
 	"time"
 
 	"github.com/hashicorp/go-multierror"
@@ -39,9 +40,9 @@ func (n ndp) Close() error {
 	return result.ErrorOrNil()
 }
 
-func ndpPayload(from net.HardwareAddr, to net.IP) ([]byte, error) {
+func ndpPayload(from net.HardwareAddr, to netip.Addr) ([]byte, error) {
 	payload := make([]byte, 4)
-	payload = append(payload, to...)
+	payload = append(payload, to.Unmap().AsSlice()...)
 	payload = append(payload, 0x01, 0x01) // Option Source Link-Layer Adress
 	payload = append(payload, from...)
 
@@ -53,16 +54,19 @@ func ndpPayload(from net.HardwareAddr, to net.IP) ([]byte, error) {
 	return m.Marshal(nil)
 }
 
-var IPv6MultiCastBase = net.IP{0xff, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0xff, 0x00, 0x00, 0x00}
+var IPv6MultiCastBase = [16]byte{0xff, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0xff, 0x00, 0x00, 0x00}
 
-func ndpMultiCastAddr(from net.Interface, to net.IP) *net.IPAddr {
+func ndpMultiCastAddr(from net.Interface, to netip.Addr) *net.IPAddr {
+	base := IPv6MultiCastBase
+	tobytes := to.As16()
+	copy(base[13:], tobytes[13:])
 	return &net.IPAddr{
-		IP:   append(IPv6MultiCastBase[:13:13], to[13:]...),
+		IP:   base[:],
 		Zone: from.Name,
 	}
 }
 
-func ndpMessage(from net.Interface, to net.IP) (ipv6.Message, error) {
+func ndpMessage(from net.Interface, to netip.Addr) (ipv6.Message, error) {
 	payload, err := ndpPayload(from.HardwareAddr, to)
 	if err != nil {
 		return ipv6.Message{}, err
@@ -78,7 +82,7 @@ func ndpMessage(from net.Interface, to net.IP) (ipv6.Message, error) {
 	}, nil
 }
 
-func (n ndp) solicit(timeout time.Duration, iface net.Interface, targets ...net.IP) ([]ipv6.Message, error) {
+func (n ndp) solicit(timeout time.Duration, iface net.Interface, targets ...netip.Addr) ([]ipv6.Message, error) {
 	var ms []ipv6.Message
 
 	if len(targets) == 0 {
@@ -86,7 +90,7 @@ func (n ndp) solicit(timeout time.Duration, iface net.Interface, targets ...net.
 	}
 
 	for _, target := range targets {
-		if t4 := target.To4(); t4 != nil {
+		if target.Is4() {
 			// skip v4 addresses
 			continue
 		}

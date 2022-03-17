@@ -10,6 +10,7 @@ import (
 	"net"
 	"net/http"
 	"net/http/httputil"
+	"net/netip"
 	"os"
 	"runtime"
 	"sort"
@@ -21,7 +22,6 @@ import (
 	"github.com/prometheus/procfs"
 	"github.com/vishvananda/netlink"
 	"golang.org/x/sys/unix"
-	"inet.af/netaddr"
 )
 
 // VERSION gnw version string
@@ -116,7 +116,7 @@ func getBirdInfo(c Config) (string, []alfredxml.BabelNeighbour) {
 			version = "bird-" + fields[2]
 		}
 		if len(fields) == 6 && strings.HasPrefix(text, " ") {
-			ll, err := netaddr.ParseIP(fields[0])
+			ll, err := netip.ParseAddr(fields[0])
 			if err != nil || !ll.Is6() || !ll.IsLinkLocalUnicast() {
 				continue
 			}
@@ -256,11 +256,13 @@ func crawl(c Config) (d alfredxml.Data, err error) {
 			return d, err
 		}
 
-		var neighProbe []net.IP
+		var neighProbe []netip.Addr
 		for _, neigh := range neighs {
 			if neigh.State&netlink.NUD_REACHABLE == 0 {
 				if neigh.IP.IsLinkLocalUnicast() {
-					neighProbe = append(neighProbe, neigh.IP)
+					if addr, ok := netip.AddrFromSlice(neigh.IP); ok {
+						neighProbe = append(neighProbe, addr)
+					}
 				}
 			}
 		}
