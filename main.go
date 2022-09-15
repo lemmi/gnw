@@ -115,7 +115,7 @@ func getBirdInfo(c Config) (string, []alfredxml.BabelNeighbour) {
 			strings.Contains(fields[1], "BIRD") {
 			version = "bird-" + fields[2]
 		}
-		if len(fields) == 6 && strings.HasPrefix(text, " ") {
+		if len(fields) >= 6 && strings.HasPrefix(text, " ") {
 			ll, err := netip.ParseAddr(fields[0])
 			if err != nil || !ll.Is6() || !ll.IsLinkLocalUnicast() {
 				continue
