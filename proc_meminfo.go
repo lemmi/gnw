@@ -63,9 +63,11 @@ type meminfo struct {
 	DirectMap4k       int
 	DirectMap2M       int
 	DirectMap1G       int
+	Zswap             int
+	Zswapped          int
 }
 
-func readMeminfo() (meminfo, error) {
+func readMeminfo(c Config) (meminfo, error) {
 	var m meminfo
 
 	fMeminfo, err := os.Open("/proc/meminfo")
@@ -76,13 +78,17 @@ func readMeminfo() (meminfo, error) {
 
 	scan := bufio.NewScanner(fMeminfo)
 	for scan.Scan() {
-		if _, err := m.setLine(scan.Text()); err != nil {
+		_, err := m.setLine(scan.Text())
+		if memerr, ok := err.(meminfoError); ok {
+			if c.Debug {
+				c.Log.Println(memerr)
+			}
+		} else if err != nil {
 			return m, err
 		}
 	}
 
 	return m, scan.Err()
-
 }
 
 type meminfoError string
@@ -207,6 +213,10 @@ func (m *meminfo) set(field string, value int) (*meminfo, error) {
 		m.DirectMap2M = value
 	case "DirectMap1G":
 		m.DirectMap1G = value
+	case "Zswap":
+		m.Zswap = value
+	case "Zswapped":
+		m.Zswapped = value
 	default:
 		return m, meminfoError(field)
 	}

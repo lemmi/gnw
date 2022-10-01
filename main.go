@@ -164,7 +164,7 @@ func crawl(c Config) (d alfredxml.Data, err error) {
 
 	{
 		var mem meminfo
-		mem, err = readMeminfo()
+		mem, err = readMeminfo(c)
 		if err != nil {
 			return
 		}
